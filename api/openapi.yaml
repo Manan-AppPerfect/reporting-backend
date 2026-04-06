@@ -1,0 +1,128 @@
+openapi: 3.0.3
+
+info:
+  title: Reporting API
+  description: API to fetch GPU capacity over time
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /reporting:
+    post:
+      summary: Get Reporting Data
+
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportingRequest"
+
+      responses: 
+        "200":
+          description: Reporting data fetched successfully
+          content: 
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/ReportingResponse"
+                
+        "500": 
+          description: Internal server error
+
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components: 
+  schemas:
+    
+    ReportingRequest:
+      type: object
+      properties: 
+        start_date:
+          type: string
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: "2025-01-01"
+
+        end_date:
+          type: string
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: "2025-06-01"
+
+        aggregation: 
+          type: string
+          enum: ["daily", "weekly" ,"monthly"]
+          default: "monthly"
+
+        csp:
+          type: array
+          items: 
+            type: string
+          example: ["AWS"]
+        
+        gpu_type: 
+          type: array
+          items:
+            type: string
+          example: ["GB200", "B300"]
+      
+      required:
+        - start_date
+        - end_date
+        - aggregation
+    
+    ChartData: 
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        contracted:
+          type: integer
+        delivered: 
+          type: integer
+      required:
+        - date
+        - contracted
+        - delivered
+
+    TableRow:
+      type: object
+      properties:
+        category:
+          type: string
+        data: 
+          type: object
+          additionalProperties:
+            type: integer
+
+    TableData:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/TableRow"
+
+    ReportingResponse:
+      type: object
+      properties:
+        chart:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartData"
+        table:
+          $ref: "#/components/schemas/TableData"
+    
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
