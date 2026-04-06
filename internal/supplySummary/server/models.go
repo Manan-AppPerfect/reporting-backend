@@ -31,8 +31,10 @@ func (e ReportingRequestAggregation) Valid() bool {
 // ChartData defines model for ChartData.
 type ChartData struct {
 	Contracted int                `json:"contracted"`
+	Csp        *string            `json:"csp,omitempty"`
 	Date       openapi_types.Date `json:"date"`
 	Delivered  int                `json:"delivered"`
+	GpuType    *string            `json:"gpu_type,omitempty"`
 }
 
 // ErrorResponse defines model for ErrorResponse.

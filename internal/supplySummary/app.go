@@ -22,6 +22,7 @@ func NewServer(p Params) *http.Server {
 	router := gin.Default()
 
 	router.Use(cors.Default())
+
 	api.RegisterHandlers(router, p.Handler)
 
 	return &http.Server{
@@ -31,18 +32,16 @@ func NewServer(p Params) *http.Server {
 
 }
 
-
-
 func StartServer(lc fx.Lifecycle, server *http.Server) {
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 
 			go func() {
-				log.Println("🚀 Server running on :8080")
+				log.Println("Server running on :8080")
 
 				if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					log.Fatalf("❌ Server failed: %v", err)
+					log.Fatalf("Server failed: %v", err)
 				}
 			}()
 
@@ -50,9 +49,8 @@ func StartServer(lc fx.Lifecycle, server *http.Server) {
 		},
 
 		OnStop: func(ctx context.Context) error {
-			log.Println("🛑 Shutting down server...")
-
-			// Graceful shutdown
+			log.Println("Shutting down server...")
+			
 			shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 

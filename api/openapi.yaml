@@ -27,7 +27,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/ReportingResponse"
-                
+
         "500": 
           description: Internal server error
 
@@ -84,6 +84,10 @@ components:
         date:
           type: string
           format: date
+        csp:
+          type: string
+        gpu_type:
+          type: string
         contracted:
           type: integer
         delivered: 

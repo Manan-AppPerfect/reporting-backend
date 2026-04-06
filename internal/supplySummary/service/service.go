@@ -25,8 +25,11 @@ func (s *Service) GetReporting(req api.ReportingRequest) (api.ReportingResponse,
 	}
 
 	grouped := make(map[string]struct {
-		contracted int
-		delivered  int
+		contracted 	int
+		delivered  	int
+		csp			string
+		gpuType		string
+		date		time.Time
 	})
 
 	var keys []string
@@ -34,11 +37,17 @@ func (s *Service) GetReporting(req api.ReportingRequest) (api.ReportingResponse,
 
 	for _, d := range data {
 
-		key := getAggregationKey(d.Date, string(req.Aggregation))
+		dateKey := getAggregationKey(d.Date, string(req.Aggregation))
+
+		key := fmt.Sprintf("%s_%s_%s", dateKey, d.Csp, d.GpuType)
 
 		val := grouped[key]
 		val.contracted += d.Contracted
 		val.delivered += d.Delivered
+		val.csp = d.Csp
+		val.gpuType = d.GpuType
+		val.date = d.Date
+
 		grouped[key] = val
 
 		if _, exists := keyIndex[key]; !exists {
@@ -49,16 +58,20 @@ func (s *Service) GetReporting(req api.ReportingRequest) (api.ReportingResponse,
 
 	var chart []api.ChartData
 	
-	for _, k := range keys {
+	for _, v := range grouped {
 
-		v := grouped[k]
-
-		parsedTime, _ := time.Parse("2006-01-02", k)
+		date := types.Date{Time: v.date}
+		c := v.contracted
+		d := v.delivered
+		csp := v.csp
+		gpu := v.gpuType
 
 		chart = append(chart, api.ChartData{
-			Date: types.Date{Time: parsedTime},
-			Contracted: v.contracted,
-			Delivered:  v.delivered,
+			Date:       date,
+			Contracted: c,
+			Delivered:  d,
+			Csp:        &csp,     
+			GpuType:    &gpu,    
 		})
 	}
 

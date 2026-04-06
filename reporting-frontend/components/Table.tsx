@@ -38,7 +38,7 @@ export default function Table() {
 
   if (!rows.length) return <div>Loading...</div>;
 
-  // 🔥 Extract all dates dynamically
+
   const dates = Object.keys(rows[0].data);
 
   return (
