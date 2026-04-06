@@ -47,7 +47,12 @@ export default function Table() {
         <tr>
           <th>Category</th>
           {dates.map((d) => (
-            <th key={d}>{d}</th>
+            <th>
+                {new Date(d.split("_")[0]).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                })}
+            </th>
           ))}
         </tr>
       </thead>
