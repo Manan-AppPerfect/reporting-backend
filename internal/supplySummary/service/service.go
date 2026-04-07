@@ -41,7 +41,9 @@ func (s *Service) GetReporting (req api.ReportingRequest) (api.ReportingResponse
 		val := chartMap[dateKey]
 		val.Contracted += d.Contracted
 		val.Delivered += d.Delivered
-		val.Date = d.Date
+		// convert to months
+		bucketDate := parseDateKey(dateKey)
+		val.Date = bucketDate
 
 		chartMap[dateKey] = val
 	}
@@ -122,7 +124,7 @@ func (s *Service) GetReporting (req api.ReportingRequest) (api.ReportingResponse
 		})
 
 		// delivered
-		catD := fmt.Sprintf("%s - Delivery & Expected", key)
+		catD := fmt.Sprintf("%s - Delivered & Expected", key)
 
 		dataD := groupDelivered[key]
 		rows = append(rows, api.TableRow{
@@ -175,4 +177,9 @@ func getAggregationKey(date time.Time, aggregation string) string {
 		// fallback → treat as daily
 		return date.Format("2006-01-02")
 	}
+}
+
+func parseDateKey(key string) time.Time {
+	t, _ := time.Parse("2006-01-02", key)
+	return t
 }

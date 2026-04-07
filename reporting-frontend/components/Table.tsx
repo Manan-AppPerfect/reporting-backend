@@ -15,7 +15,8 @@ type ApiResponse = {
 
 export default function Table() {
   const [rows, setRows] = useState<TableRow[]>([]);
-  const [dates, setDates] = useState<string[]>([])
+  const [dates, setDates] = useState<string[]>([]);
+  const [activeDate, setActiveDate] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("http://localhost:8080/reporting", {
@@ -54,19 +55,22 @@ export default function Table() {
     <div className="min-h-screen bg-gray-800 text-white p-6">
       <h2 className="text-xl font-semibold mb-4">Table View</h2>
 
-      <div className="overflow-x-auto rounded-lg border border-[#1f2d24]">
+      <div className="overflow-x-auto rounded-lg ">
         <table className="w-full">
-          
           {/* HEADER */}
           <thead className="bg-teal-800 sticky top-0 z-10">
             <tr>
-              <th className="px-32 py-3 text-center text-sm border-b border-black">
+              <th className="px-4 w-64 py-3 text-left">
                 Category
               </th>
               {dates.map((d) => (
                 <th
                   key={d}
-                  className="py-3 text-sm text-center border-b border-black"
+                  onClick={() => setActiveDate(d)}
+                  className={`px-8 py-3 text-md text-center cursor-pointer text-nowrap
+                    ${activeDate === d ? "bg-[#2f4f2f] text-white" : "hover:bg-[#1a2a22]"}
+                  `}
+                  
                 >
                   {formatDate(d)}
                 </th>
@@ -85,17 +89,19 @@ export default function Table() {
                   className={
                     isTotal
                       ? "bg-slate-900"
-                      : "bg-slate-700 hover:bg-black"
+                      : "odd:bg-slate-700 even:bg-slate-800 hover:bg-black"
                   }
                 >
-                  <td className="px-4 py-3 border-b border-black text-left">
+                  <td className="w-64 px-4 py-3 text-left text-nowrap">
                     {row.category}
                   </td>
 
                   {dates.map((d) => (
                     <td
                       key={d}
-                      className="px-4 py-3 text-center border-b border-black"
+                      className={`px-4 py-3 text-center
+                        ${activeDate === d ? "bg-[#2a3f2f] text-white" : "text-[#e5e7eb]"}
+                      `}
                     >
                       {formatNumber(row.data[d] ?? " ")}
                     </td>

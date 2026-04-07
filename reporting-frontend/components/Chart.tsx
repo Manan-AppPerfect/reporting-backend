@@ -94,6 +94,7 @@ export default function Chart() {
                     gridcolor: "#374151",
                     tickangle: -45,
                     zeroline: false,
+                    tickformat: "%b %Y",
                 },
 
                 yaxis: {
@@ -101,7 +102,7 @@ export default function Chart() {
                     showgrid: true,
                     gridcolor: "#374151",
                     zeroline: false,
-                    tickformat: ",d",
+                    tickformat: ",.0f",
                 },
 
                 legend: {
