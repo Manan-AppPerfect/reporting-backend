@@ -12,5 +12,5 @@ type Capacity struct {
 }
 
 func (Capacity) TableName() string {
-	return "gpu_capacity"
+	return "supply_summary_data"
 }
