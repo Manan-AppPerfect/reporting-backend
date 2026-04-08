@@ -1,5 +1,7 @@
 "use client";
 
+import formatLabel from "@/utils/utils";
+import { Limelight } from "next/font/google";
 import { useEffect, useState } from "react";
 
 type TableRow = {
@@ -13,7 +15,19 @@ type ApiResponse = {
   };
 };
 
-export default function Table() {
+type Props = {
+  filters: {
+    startDate: string;
+    endDate: string;
+    aggregation: string;
+    csp: string[];
+    gpu_type: string[];
+  };
+  // page: number;
+  // limit: number;
+};
+
+export default function Table({ filters }: Props) {
   const [rows, setRows] = useState<TableRow[]>([]);
   const [dates, setDates] = useState<string[]>([]);
   const [activeDate, setActiveDate] = useState<string | null>(null);
@@ -25,9 +39,11 @@ export default function Table() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        start_date: "2024-01-01",
-        end_date: "2027-12-31",
-        aggregation: "monthly",
+        start_date: filters.startDate,
+        end_date: filters.endDate,
+        aggregation: filters.aggregation,
+        csp: filters.csp,
+        gpu_type: filters.gpu_type,
       }),
     })
       .then((res) => res.json())
@@ -47,12 +63,12 @@ export default function Table() {
 
         setDates(Array.from(allDates).sort());
       });
-  }, []);
+  }, [filters]);
 
   if (!rows.length) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-800 text-white p-6">
+    <div className="px-8 py-4 min-h-screen bg-gray-800 text-white p-6">
       <h2 className="text-xl font-semibold mb-4">Table View</h2>
 
       <div className="overflow-x-auto rounded-lg ">
@@ -67,12 +83,12 @@ export default function Table() {
                 <th
                   key={d}
                   onClick={() => setActiveDate(d)}
-                  className={`px-8 py-3 text-md text-center cursor-pointer text-nowrap
+                  className={`px-4 py-3 text-md text-center cursor-pointer text-nowrap
                     ${activeDate === d ? "bg-[#2f4f2f] text-white" : "hover:bg-[#1a2a22]"}
                   `}
                   
                 >
-                  {formatDate(d)}
+                  {formatLabel(d, filters.aggregation)}
                 </th>
               ))}
             </tr>
@@ -88,7 +104,7 @@ export default function Table() {
                   key={idx}
                   className={
                     isTotal
-                      ? "bg-slate-900"
+                      ? "bg-slate-900 hover:bg-black"
                       : "odd:bg-slate-700 even:bg-slate-800 hover:bg-black"
                   }
                 >
@@ -114,13 +130,6 @@ export default function Table() {
       </div>
     </div>
   );
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function formatNumber(num: number) {

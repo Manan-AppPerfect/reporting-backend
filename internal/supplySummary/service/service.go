@@ -137,11 +137,38 @@ func (s *Service) GetReporting (req api.ReportingRequest) (api.ReportingResponse
 		return *rows[i].Category < *rows[j].Category
 	})
 
+	// pagination
+
+	page := 1
+	limit := 6
+
+	if req.Page != nil && *req.Page > 0 {
+		page = *req.Page
+	}
+	if req.Limit != nil && *req.Limit > 0 {
+		limit = *req.Limit
+	}
+
+	total := len(rows)
+
+	start := (page - 1) * limit
+	end := start + limit
+
+	if start > total {
+		start = total
+	}
+	if end > total {
+		end = total
+	}
+
+	paginatedRows := rows[start:end]
+
 	return api.ReportingResponse{
 		Chart: &chart,
 		Table: &api.TableData{
-			Rows: &rows,
+			Rows: &paginatedRows,
 		},
+		Total: &total,
 	}, nil
 
 }
@@ -152,6 +179,24 @@ func getAggregationKey(date time.Time, aggregation string) string {
 
 	case "daily":
 		return date.Format("2006-01-02")
+
+	case "weekly":
+		weekday := int(date.Weekday())
+
+		if weekday == 0 {
+			weekday = 7
+		}
+
+		weekStart := date.AddDate(0, 0, -(weekday - 1))
+
+		weekStart = time.Date(
+			weekStart.Year(),
+			weekStart.Month(),
+			weekStart.Day(),
+			0,0,0,0,
+			time.UTC,			
+		)
+		return weekStart.Format("2006-01-02")
 		
 	case "monthly":
 		monthStart := time.Date(

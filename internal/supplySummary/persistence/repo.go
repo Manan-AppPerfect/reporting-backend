@@ -25,6 +25,14 @@ func (r *Repository) GetData(req api.ReportingRequest) ([]model.Capacity, error)
 	endDate := req.EndDate.Time
 
 	query = query.Where("date >= ? AND date <= ?", startDate, endDate)
+	
+	if req.Csp != nil && len(*req.Csp) > 0 {
+		query = query.Where("csp IN ?", *req.Csp)
+	}
+
+	if req.GpuType != nil && len(*req.GpuType) > 0 {
+		query = query.Where("gpu_type IN ?", *req.GpuType)
+	}
 
 	query = query.Order("date ASC")
 

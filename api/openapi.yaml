@@ -72,6 +72,16 @@ components:
           items:
             type: string
           example: ["GB200", "B300"]
+
+        page: 
+          type: integer
+          minimum: 1
+          example: 1
+        
+        limit: 
+          type: integer
+          minimum: 1
+          example: 6
       
       required:
         - start_date
@@ -124,6 +134,9 @@ components:
             $ref: "#/components/schemas/ChartData"
         table:
           $ref: "#/components/schemas/TableData"
+        total:
+          type: integer
+          example: 25
     
     ErrorResponse:
       type: object

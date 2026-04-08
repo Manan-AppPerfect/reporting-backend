@@ -1,5 +1,6 @@
 "use client";
 
+import formatLabel from "@/utils/utils";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
@@ -13,7 +14,17 @@ type ChartData = {
     delivered: number;
 };
 
-export default function Chart() {
+type Props = {
+  filters: {
+    startDate: string;
+    endDate: string;
+    aggregation: string;
+    csp: string[];
+    gpu_type: string[];
+  };
+};
+
+export default function Chart({ filters }: Props) {
 
     const [data, setData] = useState<ChartData[]>([]);
 
@@ -24,15 +35,17 @@ export default function Chart() {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            start_date: "2024-01-01",
-            end_date: "2027-12-31",
-            aggregation: "monthly",
+            start_date: filters.startDate,
+            end_date: filters.endDate,
+            aggregation: filters.aggregation,
+            csp: filters.csp,
+            gpu_type: filters.gpu_type,
         }),
         })
         .then((res) => res.json())
         .then((res) => setData(res.chart || []))
         .catch(console.error);
-    }, []);
+    }, [filters]);
 
     if (!data.length) return <div>Loading...</div>;
 
@@ -40,12 +53,12 @@ export default function Chart() {
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    const dates = sorted.map((d) => d.date);
+    const dates = sorted.map((d) => formatLabel(d.date, filters.aggregation));
     const contracted = sorted.map((d) => d.contracted);
     const delivered = sorted.map((d) => d.delivered);
 
     return (
-        <div className="p-8">    
+        <div className="px-8 py-4">    
             <Plot
                 config={{
                 displaylogo: false,
@@ -116,7 +129,7 @@ export default function Chart() {
                     l: 120,
                     r: 20,
                     t: 80,
-                    b: 60,
+                    b: 120,
                 },
                 hovermode: "x unified",
                 }}
