@@ -13,24 +13,27 @@ type ApiResponse = {
   table: {
     rows: TableRow[];
   };
+  total?: number;
 };
 
 type Props = {
   filters: {
-    startDate: string;
+    startDate: string;  
     endDate: string;
     aggregation: string;
     csp: string[];
     gpu_type: string[];
   };
-  // page: number;
-  // limit: number;
+  page: number;
+  limit: number;
+  setPage: (p: number | ((prev: number) => number)) => void;
 };
 
-export default function Table({ filters }: Props) {
+export default function Table({ filters, page, limit, setPage }: Props) {
   const [rows, setRows] = useState<TableRow[]>([]);
   const [dates, setDates] = useState<string[]>([]);
   const [activeDate, setActiveDate] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     fetch("http://localhost:8080/reporting", {
@@ -44,17 +47,21 @@ export default function Table({ filters }: Props) {
         aggregation: filters.aggregation,
         csp: filters.csp,
         gpu_type: filters.gpu_type,
+        page: page,
+        limit: limit,
       }),
     })
       .then((res) => res.json())
       .then((res: ApiResponse) => {
         const tableRows = res.table?.rows || [];
-        const sortedRows = tableRows.sort((a, b) => {
-          if (a.category.includes("Total")) return -1;
-          if (b.category.includes("Total")) return 1;
-          return 0;
-        });
+        const sortedRows = [
+          ...tableRows.filter(r => r.category === "Total Contracted GPUs - Contracted Delivery"),
+          ...tableRows.filter(r => r.category === "Total Contracted GPUs - Delivered & Expected"),
+          ...tableRows.filter(r => !r.category.includes("Total"))
+        ];
+
         setRows(sortedRows);
+        setTotal(res.total || 0);
 
         const allDates = new Set<string>();
         tableRows.forEach((row) => {
@@ -63,9 +70,13 @@ export default function Table({ filters }: Props) {
 
         setDates(Array.from(allDates).sort());
       });
-  }, [filters]);
+  }, [filters, page]);
 
   if (!rows.length) return <div>Loading...</div>;
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(page * limit, total);
 
   return (
     <div className="px-8 py-4 min-h-screen bg-gray-800 text-white p-6">
@@ -127,6 +138,33 @@ export default function Table({ filters }: Props) {
             })}
           </tbody>
         </table>
+      </div>
+      <div className="flex items-center justify-end gap-4 mt-4">
+
+        <span className="text-white">
+          {start} to {end} of {total}
+        </span>
+        
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={page === 1}
+          className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
+        >
+          Previous
+        </button>
+
+        <span className="text-white">
+          Page {page} of {totalPages}
+        </span>
+
+        <button
+          onClick={() => setPage((p) => p + 1)}
+          disabled={rows.length < limit}
+          className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+
       </div>
     </div>
   );

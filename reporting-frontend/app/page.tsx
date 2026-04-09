@@ -4,8 +4,10 @@ import Filters from "@/components/Filters";
 import Table from "@/components/Table";
 import { useState } from "react";
 
-
 export default function Home() {
+
+  const [page, setPage] = useState(1);
+  const limit = 6;
 
   const [filters, setFilters] = useState({
     startDate: "2025-04-01",
@@ -32,7 +34,7 @@ export default function Home() {
       <div className="flex flex-col gap-2">
         <Filters onApply={handleFilters} />
         <Chart filters={filters}/>
-        <Table filters={filters}/>
+        <Table filters={filters} page={page} limit={limit} setPage={setPage}/>
       </div>
     </div>
   )

@@ -137,6 +137,20 @@ func (s *Service) GetReporting (req api.ReportingRequest) (api.ReportingResponse
 		return *rows[i].Category < *rows[j].Category
 	})
 
+	var fixedRows []api.TableRow
+	var otherRows []api.TableRow
+
+	for _, row := range rows {
+		if row.Category != nil &&
+			(*row.Category == "Total Contracted GPUs - Contracted Delivery" ||
+			*row.Category == "Total Contracted GPUs - Delivered & Expected") {
+
+			fixedRows = append(fixedRows, row)
+		} else {
+			otherRows = append(otherRows, row)
+		}
+	}
+
 	// pagination
 
 	page := 1
@@ -149,7 +163,7 @@ func (s *Service) GetReporting (req api.ReportingRequest) (api.ReportingResponse
 		limit = *req.Limit
 	}
 
-	total := len(rows)
+	total := len(otherRows)
 
 	start := (page - 1) * limit
 	end := start + limit
@@ -161,12 +175,14 @@ func (s *Service) GetReporting (req api.ReportingRequest) (api.ReportingResponse
 		end = total
 	}
 
-	paginatedRows := rows[start:end]
+	paginatedRows := otherRows[start:end]
+
+	finalRows := append(fixedRows, paginatedRows...)
 
 	return api.ReportingResponse{
 		Chart: &chart,
 		Table: &api.TableData{
-			Rows: &paginatedRows,
+			Rows: &finalRows,
 		},
 		Total: &total,
 	}, nil
