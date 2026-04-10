@@ -3,7 +3,7 @@ import Chart from "@/components/Chart";
 import Filters from "@/components/Filters";
 import Table from "@/components/Table";
 import { getReportingData } from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
 
@@ -33,14 +33,18 @@ export default function Home() {
     setFilters(filters); 
   };
 
+  const prevFiltersRef = useRef(filters);
+
+
   useEffect(() => {
     const fetchData = async () => {
-      const isPageChange = !isFirstLoad;
+      const isFilterChange =
+        JSON.stringify(prevFiltersRef.current) !== JSON.stringify(filters);
 
-      if (isPageChange) {
-        setPageLoading(true);
+      if (isFilterChange || isFirstLoad) {
+        setLoading(true);        // full loader for filters + first load
       } else {
-        setLoading(true);
+        setPageLoading(true);    // only pagination
       }
 
       const start = Date.now();
@@ -61,6 +65,7 @@ export default function Home() {
         setLoading(false);
         setPageLoading(false);
         setIsFirstLoad(false);
+        prevFiltersRef.current = filters;
       }
     };
 
@@ -76,7 +81,7 @@ export default function Home() {
       <h1 className="p-8 font-bold text-4xl text-white">Supply Summary</h1>
       <div className="flex flex-col gap-2">
         <Filters onApply={handleFilters} />
-        {loading && (
+        {loading && !pageLoading && (
           <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-600 border-t-white mb-3"></div>
             <p>Loading data...</p>
