@@ -2,7 +2,6 @@
 
 import formatLabel from "@/utils/utils";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
     ssr: false,
@@ -15,50 +14,24 @@ type ChartData = {
 };
 
 type Props = {
-  filters: {
-    startDate: string;
-    endDate: string;
+    data: ChartData[] | undefined;
     aggregation: string;
-    csp: string[];
     gpu_type: string[];
-  };
 };
 
-export default function Chart({ filters }: Props) {
+export default function Chart({ data, aggregation, gpu_type }: Props) {
 
-    const [data, setData] = useState<ChartData[]>([]);
-
-    useEffect(() => {
-        fetch("http://localhost:8080/reporting", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            start_date: filters.startDate,
-            end_date: filters.endDate,
-            aggregation: filters.aggregation,
-            csp: filters.csp,
-            gpu_type: filters.gpu_type,
-        }),
-        })
-        .then((res) => res.json())
-        .then((res) => setData(res.chart || []))
-        .catch(console.error);
-    }, [filters]);
-
-    if (!data.length) return <div>Loading...</div>;
-
+    if (!data) return null;
     const sorted = [...data].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    const dates = sorted.map((d) => formatLabel(d.date, filters.aggregation));
+    const dates = sorted.map((d) => formatLabel(d.date, aggregation));
     const contracted = sorted.map((d) => d.contracted);
     const delivered = sorted.map((d) => d.delivered);
 
     return (
-        <div className="px-8 py-4">    
+        <div className="rounded-xl overflow-hidden mx-8 my-2 h-[530px]">    
             <Plot
                 config={{
                 displaylogo: false,
@@ -81,7 +54,7 @@ export default function Chart({ filters }: Props) {
                     type: "scatter",
                     mode: "lines+markers",
                     name: "Contracted",
-                    line: { color: "#4ade80", width: 2 },
+                    line: { color: "#4ade80", width: 1.5 },
                 },
                 {
                     x: dates,
@@ -89,17 +62,17 @@ export default function Chart({ filters }: Props) {
                     type: "scatter",
                     mode: "lines+markers",
                     name: "Delivered",
-                    line: { color: "#60a5fa" , width: 2 },
+                    line: { color: "#60a5fa" , width: 1.5 },
                 },
                 ]}
                 layout={{
 
-                paper_bgcolor: "#111827",
-                plot_bgcolor: "#111827",
+                paper_bgcolor: "#272e2b",
+                plot_bgcolor: "#272e2b",
                 font: { color: "#e5e7eb" },
 
                 title: {
-                    text: "Total Capacity GPUs<br><sub>(Below Graph is the aggregated data across all GPUs)</sub>",
+                    text: `Total Capacity GPUs<br><sub>(Below Graph is the aggregated data across all ${gpu_type} GPUs) </sub>`,
                 },
 
                 xaxis: {
@@ -111,10 +84,13 @@ export default function Chart({ filters }: Props) {
                 },
 
                 yaxis: {
-                    title : { text: "Contracted GPUs", standoff: 30 },
+                    title : { text: "Contracted GPUs", standoff: 20 },
                     showgrid: true,
                     gridcolor: "#374151",
-                    zeroline: false,
+                    zeroline: true,
+                    zerolinewidth: 2,
+                    zerolinecolor: "#c4c9d0" ,
+                    rangemode: "tozero",
                     tickformat: ",.0f",
                 },
 
@@ -134,7 +110,7 @@ export default function Chart({ filters }: Props) {
                 hovermode: "x unified",
                 }}
 
-                style={{ width: "100%", height: "700px" }}
+                style={{ width: "100%", height: "100%" }}
             />
     </div>
     );

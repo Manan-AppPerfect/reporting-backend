@@ -1,8 +1,7 @@
 "use client";
 
 import formatLabel from "@/utils/utils";
-import { Limelight } from "next/font/google";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type TableRow = {
   category: string;
@@ -17,75 +16,49 @@ type ApiResponse = {
 };
 
 type Props = {
-  filters: {
-    startDate: string;  
-    endDate: string;
-    aggregation: string;
-    csp: string[];
-    gpu_type: string[];
-  };
+  data: ApiResponse | null;
   page: number;
   limit: number;
+  aggregation: string;
   setPage: (p: number | ((prev: number) => number)) => void;
 };
 
-export default function Table({ filters, page, limit, setPage }: Props) {
-  const [rows, setRows] = useState<TableRow[]>([]);
-  const [dates, setDates] = useState<string[]>([]);
+export default function Table({ data, page, limit, aggregation, setPage }: Props) {
   const [activeDate, setActiveDate] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    fetch("http://localhost:8080/reporting", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        start_date: filters.startDate,
-        end_date: filters.endDate,
-        aggregation: filters.aggregation,
-        csp: filters.csp,
-        gpu_type: filters.gpu_type,
-        page: page,
-        limit: limit,
-      }),
-    })
-      .then((res) => res.json())
-      .then((res: ApiResponse) => {
-        const tableRows = res.table?.rows || [];
-        const sortedRows = [
-          ...tableRows.filter(r => r.category === "Total Contracted GPUs - Contracted Delivery"),
-          ...tableRows.filter(r => r.category === "Total Contracted GPUs - Delivered & Expected"),
-          ...tableRows.filter(r => !r.category.includes("Total"))
-        ];
+  const tableRows = data?.table?.rows || [];
+  const total = data?.total ?? tableRows.length;
 
-        setRows(sortedRows);
-        setTotal(res.total || 0);
+  const sortedRows = [
+    ...tableRows.filter(r => r.category === "Total Contracted GPUs - Contracted Delivery"),
+    ...tableRows.filter(r => r.category === "Total Contracted GPUs - Delivered & Expected"),
+    ...tableRows.filter(r => !r.category.includes("Total"))
+  ];
 
-        const allDates = new Set<string>();
-        tableRows.forEach((row) => {
-          Object.keys(row.data).forEach((d) => allDates.add(d));
-        });
+  const rows = sortedRows;
 
-        setDates(Array.from(allDates).sort());
-      });
-  }, [filters, page]);
+  const allDates = new Set<string>();
+  tableRows.forEach((row) => {
+    Object.keys(row.data).forEach((d) => allDates.add(d));
+  });
 
-  if (!rows.length) return <div>Loading...</div>;
+  const dates = Array.from(allDates).sort();
+
   const totalPages = Math.ceil(total / limit) || 1;
 
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
 
-  return (
-    <div className="px-8 py-4 min-h-screen bg-gray-800 text-white p-6">
-      <h2 className="text-xl font-semibold mb-4">Table View</h2>
+  if (!data) return null;
 
-      <div className="overflow-x-auto rounded-lg ">
+  return (
+    <div className="px-8 py-4 min-h-screen text-white">
+      <h2 className="text-3xl font-bold text-start mb-4">Table View</h2>
+
+      <div className="overflow-x-auto rounded-lg">
         <table className="w-full">
           {/* HEADER */}
-          <thead className="bg-teal-800 sticky top-0 z-10">
+          <thead className="bg-[#272e2b]">
             <tr>
               <th className="px-4 w-64 py-3 text-left">
                 Category
@@ -95,11 +68,11 @@ export default function Table({ filters, page, limit, setPage }: Props) {
                   key={d}
                   onClick={() => setActiveDate(d)}
                   className={`px-4 py-3 text-md text-center cursor-pointer text-nowrap
-                    ${activeDate === d ? "bg-[#2f4f2f] text-white" : "hover:bg-[#1a2a22]"}
+                    ${activeDate === d ? "bg-lime-900 text-white" : "hover:bg-black "}
                   `}
                   
                 >
-                  {formatLabel(d, filters.aggregation)}
+                  {formatLabel(d, aggregation)}
                 </th>
               ))}
             </tr>
@@ -115,8 +88,8 @@ export default function Table({ filters, page, limit, setPage }: Props) {
                   key={idx}
                   className={
                     isTotal
-                      ? "bg-slate-900 hover:bg-black"
-                      : "odd:bg-slate-700 even:bg-slate-800 hover:bg-black"
+                      ? "bg-lime-900 hover:bg-black"
+                      : "odd:bg-[#272e2b] even:bg-mist-700 hover:bg-black"
                   }
                 >
                   <td className="w-64 px-4 py-3 text-left text-nowrap">
@@ -127,10 +100,10 @@ export default function Table({ filters, page, limit, setPage }: Props) {
                     <td
                       key={d}
                       className={`px-4 py-3 text-center
-                        ${activeDate === d ? "bg-[#2a3f2f] text-white" : "text-[#e5e7eb]"}
+                        ${activeDate === d ? "bg-lime-900 text-white" : "text-[#e5e7eb]"}
                       `}
                     >
-                      {formatNumber(row.data[d] ?? " ")}
+                      {row.data[d] !== undefined ? formatNumber(row.data[d]) : ""}
                     </td>
                   ))}
                 </tr>
@@ -146,6 +119,7 @@ export default function Table({ filters, page, limit, setPage }: Props) {
         </span>
         
         <button
+          type="button"
           onClick={() => setPage((p) => Math.max(1, p - 1))}
           disabled={page === 1}
           className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
@@ -158,8 +132,9 @@ export default function Table({ filters, page, limit, setPage }: Props) {
         </span>
 
         <button
+          type="button"
           onClick={() => setPage((p) => p + 1)}
-          disabled={rows.length < limit}
+          disabled={page >= totalPages}
           className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
         >
           Next

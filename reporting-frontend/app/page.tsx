@@ -2,11 +2,16 @@
 import Chart from "@/components/Chart";
 import Filters from "@/components/Filters";
 import Table from "@/components/Table";
-import { useState } from "react";
+import { getReportingData } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export default function Home() {
 
+  const [data, setData] = useState<any>(null);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const limit = 6;
 
   const [filters, setFilters] = useState({
@@ -24,19 +29,69 @@ export default function Home() {
     csp: string[];
     gpu_type: string[];
   }) => {
+    setPage(1);
     setFilters(filters); 
   };
 
-  return (
+  useEffect(() => {
+    const fetchData = async () => {
+      const isPageChange = !isFirstLoad;
 
-    <div className="min-h-screen bg-gray-800">
+      if (isPageChange) {
+        setPageLoading(true);
+      } else {
+        setLoading(true);
+      }
+
+      const start = Date.now();
+
+      try {
+        const res = await getReportingData({ ...filters, page, limit });
+        setData(res);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        const elapsed = Date.now() - start;
+        const minTime = 300;
+
+        if (elapsed < minTime) {
+          await new Promise(resolve => setTimeout(resolve, minTime - elapsed));
+        }
+
+        setLoading(false);
+        setPageLoading(false);
+        setIsFirstLoad(false);
+      }
+    };
+
+    fetchData();
+  }, [filters, page]);
+
+  const hasData =
+    data?.table?.rows &&
+    data.table.rows.length > 2;
+
+  return (
+    <div className="min-h-screen bg-[#132a20]">
       <h1 className="p-8 font-bold text-4xl text-white">Supply Summary</h1>
       <div className="flex flex-col gap-2">
         <Filters onApply={handleFilters} />
-        <Chart filters={filters}/>
-        <Table filters={filters} page={page} limit={limit} setPage={setPage}/>
+        {loading && (
+          <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-600 border-t-white mb-3"></div>
+            <p>Loading data...</p>
+          </div>
+        )}
+        {!loading && hasData && (
+          <Chart data={data?.chart} aggregation={filters.aggregation} gpu_type={filters.gpu_type}/>
+        )}
+        {!loading && hasData && (
+          <Table data={data} page={page} limit={limit} aggregation={filters.aggregation} setPage={setPage}/>
+        )}
+        {!loading && !hasData && (
+          <div className="p-8 text-white text-center">No data available</div>
+        )}
       </div>
     </div>
   )
 }
-
