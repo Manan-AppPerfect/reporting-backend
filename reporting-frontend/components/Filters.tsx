@@ -31,8 +31,8 @@ export default function Filters( { onApply } : FilterProps ) {
     const [ aggregation, setAggregation ] = useState("monthly");
     const [ csp, setCsp ] = useState<string[]>([]);
     const [ gpu_type, setGpuType ] = useState<string[]>([]);
-    const [cspOpen, setCspOpen] = useState(false);
-    const [gpuOpen, setGpuOpen] = useState(false);
+    const [ cspOpen, setCspOpen ] = useState(false);
+    const [ gpuOpen, setGpuOpen ] = useState(false);
     const [ open, setOpen ] = useState(false);
 
     const handleApply = () => {
@@ -58,7 +58,7 @@ export default function Filters( { onApply } : FilterProps ) {
                     onClick={() => setOpen(!open)}
                     className="text-sm text-gray-300 hover:text-white"
                     >
-                    {open ? "Hide Filters ▲" : "Show Filters ▼"}
+                    {open ? "Hide Filters" : "Show Filters"}
                     </button>
                 </div>
 
